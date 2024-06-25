@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { mock } from "../utils/http";
 import { useNavigation } from "@react-navigation/native";
@@ -63,7 +64,7 @@ function ListOrchid() {
           )}
         />
       ) : (
-        <Text>Loading...</Text>
+        <ActivityIndicator />
       )}
     </SafeAreaView>
   );

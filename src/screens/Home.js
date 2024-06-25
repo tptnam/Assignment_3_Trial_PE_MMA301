@@ -2,14 +2,13 @@ import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-function Home() {
+function HomeScreen() {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
       <Text
         onPress={() => {
           navigation.navigate("List");
-          console.log("works");
         }}>
         Welcome to the Home screen!
       </Text>
@@ -26,4 +25,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+export default HomeScreen;
