@@ -7,26 +7,30 @@ import {
   SafeAreaView,
   Image,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { mock } from "../utils/http";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 function ListOrchid() {
-  const [data, setData] = useState([]);
   const navigation = useNavigation();
+  const [data, setData] = useState([]);
 
   const fetchOrchid = async () => {
     try {
       const res = await mock.get("category");
+      console.log(res.data);
+
       if (res.data) {
-        setData(res.data);
+        await AsyncStorage.setItem("orchid", JSON.stringify(res.data));
       } else {
-        console.error("Error: Response data is not structured as expected.");
+        console.error("Error fetching data:", res.statusText);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
+      setData([]);
     }
   };
 
@@ -34,12 +38,38 @@ function ListOrchid() {
     fetchOrchid();
   }, []);
 
-  // const handlePress = (item) => {
-  //   Alert.alert(
-  //     item.name,
-  //     `Weight: ${item.weight}\nRating: ${item.rating}\nPrice: ${item.price}\nIs Top Of The Week: ${item.isTopOfTheWeek}\nColor: ${item.color}\nBonus: ${item.bonus}\nOrigin: ${item.origin}`
-  //   );
-  // };
+  useFocusEffect(
+    // combo đi chung cho navigation khi focus vào màn hình này thì nó sẽ gọi lại
+    React.useCallback(() => {
+      getData();
+    }, [])
+  );
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem("orchid");
+      setData(JSON.parse(jsonValue) || []);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handlePressFavorite = async (item) => {
+    const updatedData = data.map((section) => {
+      return {
+        ...section,
+        items: section.items.map((orchid) => {
+          if (orchid.name === item.name) {
+            return { ...orchid, isFavorite: !orchid.isFavorite };
+          }
+          return orchid;
+        }),
+      };
+    });
+
+    setData(updatedData);
+    await AsyncStorage.setItem("orchid", JSON.stringify(updatedData));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -47,7 +77,7 @@ function ListOrchid() {
         <SectionList
           sections={data.map((section) => ({
             ...section,
-            data: section.items, //nhớ đoạn này lấy cục dữ liệu cần lặp lại
+            data: section.items,
           }))}
           keyExtractor={(item, index) => item + index}
           renderItem={({ item }) => (
@@ -56,6 +86,14 @@ function ListOrchid() {
               <TouchableOpacity
                 onPress={() => navigation.navigate("detailOrchid", { item })}>
                 <Image source={{ uri: item.image }} style={styles.image} />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => handlePressFavorite(item)}>
+                <Ionicons
+                  name={item.isFavorite ? "heart" : "heart-outline"}
+                  size={28}
+                  color={"red"}
+                />
               </TouchableOpacity>
             </View>
           )}
@@ -76,9 +114,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   item: {
-    backgroundColor: "#f9c2ff",
-    padding: 20,
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
     marginVertical: 8,
+    padding: 20,
+    backgroundColor: "#79CDCD",
     alignItems: "center",
   },
   header: {
