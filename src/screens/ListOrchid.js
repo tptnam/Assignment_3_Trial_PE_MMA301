@@ -21,7 +21,7 @@ function ListOrchid() {
   const fetchOrchid = async () => {
     try {
       const res = await mock.get("category");
-      console.log(res.data);
+      console.log("data", res.data);
 
       if (res.data) {
         await AsyncStorage.setItem("orchid", JSON.stringify(res.data));

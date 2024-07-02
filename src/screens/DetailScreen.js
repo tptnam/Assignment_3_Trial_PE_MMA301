@@ -1,11 +1,55 @@
-import { useRoute } from "@react-navigation/native";
-import React from "react";
-import { Text, StyleSheet, ScrollView, Image } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
+import React, { useState } from "react";
+import {
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const DetailScreen = () => {
   const route = useRoute();
   const { item } = route.params;
-  console.log(item);
+  const [data, setData] = useState([]);
+
+  useFocusEffect(
+    // combo đi chung cho navigation khi focus vào màn hình này thì nó sẽ gọi lại
+    React.useCallback(() => {
+      getData();
+    }, [])
+  );
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem("orchid");
+      setData(JSON.parse(jsonValue) || []);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handlePressFavorite = async (item) => {
+    const updatedData = data.map((section) => {
+      return {
+        ...section,
+        items: section.items.map((orchid) => {
+          if (orchid.name === item.name) {
+            {
+              item.isFavorite = !item.isFavorite;
+            }
+            return { ...orchid, isFavorite: !orchid.isFavorite };
+          }
+          return orchid;
+        }),
+      };
+    });
+
+    setData(updatedData);
+    await AsyncStorage.setItem("orchid", JSON.stringify(updatedData));
+  };
   return (
     <ScrollView style={styles.container}>
       <Image source={{ uri: item.image }} style={styles.image} />
@@ -32,6 +76,13 @@ const DetailScreen = () => {
       <Text style={styles.label}>
         Origin: <Text style={styles.value}>{item.origin}</Text>
       </Text>
+      <TouchableOpacity onPress={() => handlePressFavorite(item)}>
+        <Ionicons
+          name={item.isFavorite ? "heart" : "heart-outline"}
+          size={28}
+          color={"red"}
+        />
+      </TouchableOpacity>
     </ScrollView>
   );
 };
